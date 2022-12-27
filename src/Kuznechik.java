@@ -2,6 +2,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.HashSet;
 import java.util.Set;
+
 public class Kuznechik {
     private byte[] key;
     private byte[] iVector;
@@ -13,11 +14,13 @@ public class Kuznechik {
     private int stopCTR;
     private Set<byte[]> T;
     private static Kuznechik instance;
+
     public static Kuznechik getInstance(byte[] key, byte[] iVector) {
         if (instance == null)
             instance = new Kuznechik(key, iVector);
         return instance;
     }
+
     private Kuznechik(byte[] key, byte[] iVector) {
         if (key.length != 32 || iVector.length != 16)
             throw new IllegalArgumentException("Wrong size of key or iVector");
@@ -29,6 +32,7 @@ public class Kuznechik {
         System.arraycopy(this.key, 16, rightPart, 0, 16);
         initRoundKeys(leftPart, rightPart);
     }
+
     private final int BLOCK_SIZE_BYTES = 16;
     private final byte[] Pi = {
             (byte) 0xFC, (byte) 0xEE, (byte) 0xDD, 0x11, (byte) 0xCF, 0x6E, 0x31, 0x16,
@@ -125,12 +129,14 @@ public class Kuznechik {
             1, (byte) 148, 32, (byte) 133, 16, (byte) 194, (byte) 192, 1,
             (byte) 251, 1, (byte) 192, (byte) 194, 16, (byte) 133, 32, (byte) 148
     };
+
     private byte[] XOR(byte[] left, byte[] right) {
         byte[] result = new byte[BLOCK_SIZE_BYTES];
         for (int i = 0; i < result.length; i++)
             result[i] = (byte) (left[i] ^ right[i]);
         return result;
     }
+
     private byte[] S(byte[] input) {
         byte[] output = new byte[input.length];
         for (int i = 0; i < BLOCK_SIZE_BYTES; i++) {
@@ -141,6 +147,7 @@ public class Kuznechik {
         }
         return output;
     }
+
     private byte multiplicationGF(byte left, byte right) {
         byte result = 0;
         byte hBit;
@@ -155,10 +162,11 @@ public class Kuznechik {
         }
         return result;
     }
+
     private byte[] R(byte[] input) {
         byte a15 = 0;
         byte[] output = new byte[16];
-        for (int i = 15; i>= 0; i--) {
+        for (int i = 15; i >= 0; i--) {
             if (i == 0)
                 output[15] = input[i];
             else
@@ -168,6 +176,7 @@ public class Kuznechik {
         output[15] = a15;
         return output;
     }
+
     private byte[] L(byte[] input) {
         byte[] output = input;
         for (int i = 0; i < 16; i++)
@@ -185,6 +194,7 @@ public class Kuznechik {
         }
         return output;
     }
+
     private byte[] rR(byte[] input) {
         byte a0 = input[15];
         byte[] output = new byte[16];
@@ -195,12 +205,14 @@ public class Kuznechik {
         output[0] = a0;
         return output;
     }
+
     private byte[] rL(byte[] input) {
         byte[] output = input;
         for (int i = 0; i < 16; i++)
             output = rR(output);
         return output;
     }
+
     private void initRoundConst() {
         byte[][] roundNum = new byte[32][16];
         for (int i = 0; i < 32; i++) {
@@ -211,6 +223,7 @@ public class Kuznechik {
         for (int i = 0; i < 32; i++)
             roundConst[i] = L(roundNum[i]);
     }
+
     private byte[][] FeistelRound(byte[] inLeft, byte[] inRight, byte[] roundC) {
         byte[] temp;
         byte[] outRight = inLeft;
@@ -223,6 +236,7 @@ public class Kuznechik {
         result[1] = outRight;
         return result;
     }
+
     private void initRoundKeys(byte[] left, byte[] right) {
         byte[][] curRound = new byte[2][];
         initRoundConst();
@@ -238,6 +252,7 @@ public class Kuznechik {
             roundKeys[2 * i + 3] = curRound[1];
         }
     }
+
     private byte[] encrypt(byte[] inputBlock) {
         byte[] outputBlock = inputBlock;
         for (int i = 0; i < 9; i++) {
@@ -248,6 +263,7 @@ public class Kuznechik {
         outputBlock = XOR(outputBlock, roundKeys[9]);
         return outputBlock;
     }
+
     private byte[] decrypt(byte[] inputBlock) {
         byte[] outputBlock = inputBlock;
         outputBlock = XOR(outputBlock, roundKeys[9]);
@@ -258,6 +274,7 @@ public class Kuznechik {
         }
         return outputBlock;
     }
+
     public byte[] encrypt(byte[] input, Mode mode) {
         return switch (mode) {
             case CBC -> encryptCBC(input);
@@ -267,6 +284,7 @@ public class Kuznechik {
             default -> encryptECB(input);
         };
     }
+
     public byte[] decrypt(byte[] input, Mode mode) {
         return switch (mode) {
             case CBC -> decryptCBC(input);
@@ -276,6 +294,7 @@ public class Kuznechik {
             default -> decryptECB(input);
         };
     }
+
     private byte[] encryptCBC(byte[] input) {
         stopCBC = input.length;
         int size = blocksCeiling(input);
@@ -285,6 +304,7 @@ public class Kuznechik {
             outputBlocks[i] = encrypt(XOR(outputBlocks[i - 1], outputBlocks[i]));
         return concatData(outputBlocks);
     }
+
     private byte[] decryptCBC(byte[] input) {
         int size = blocksCeiling(input);
         byte[][] inputBlocks = splitData(input);
@@ -297,6 +317,7 @@ public class Kuznechik {
         System.arraycopy(temp, 0, output, 0, stopCBC);
         return output;
     }
+
     private byte[] encryptCFB(byte[] input) {
         stopCFB = input.length;
         int size = blocksCeiling(input);
@@ -307,6 +328,7 @@ public class Kuznechik {
             outputBlocks[i] = XOR(encrypt(outputBlocks[i - 1]), inputBlocks[i]);
         return concatData(outputBlocks);
     }
+
     private byte[] decryptCFB(byte[] input) {
         int size = blocksCeiling(input);
         byte[][] inputBlocks = splitData(input);
@@ -319,6 +341,7 @@ public class Kuznechik {
         System.arraycopy(temp, 0, output, 0, stopCFB);
         return output;
     }
+
     private byte[] encryptOFB(byte[] input) {
         stopOFB = input.length;
         int size = blocksCeiling(input);
@@ -329,6 +352,7 @@ public class Kuznechik {
             outputBlocks[i] = XOR(inputBlocks[i], O[i]);
         return concatData(outputBlocks);
     }
+
     private byte[] decryptOFB(byte[] input) {
         int size = blocksCeiling(input);
         byte[][] inputBlocks = splitData(input);
@@ -341,6 +365,7 @@ public class Kuznechik {
         System.arraycopy(temp, 0, output, 0, stopOFB);
         return output;
     }
+
     private byte[][] generateO(int size) {
         byte[][] O = new byte[size][16];
         O[0] = encrypt(iVector);
@@ -348,6 +373,7 @@ public class Kuznechik {
             O[i] = encrypt(O[i - 1]);
         return O;
     }
+
     private byte[] encryptCTR(byte[] input) {
         stopCTR = input.length;
         int size = blocksCeiling(input);
@@ -359,6 +385,7 @@ public class Kuznechik {
             outputBlocks[i] = XOR(inputBlocks[i], O[i]);
         return concatData(outputBlocks);
     }
+
     private byte[] decryptCTR(byte[] input) {
         int size = blocksCeiling(input);
         byte[][] inputBlocks = splitData(input);
@@ -371,6 +398,7 @@ public class Kuznechik {
         System.arraycopy(temp, 0, output, 0, stopCTR);
         return output;
     }
+
     private byte[][] generateO() {
         byte[][] O = new byte[T.size()][16];
         int i = 0;
@@ -378,6 +406,7 @@ public class Kuznechik {
             O[i++] = encrypt(t);
         return O;
     }
+
     private void initT(int size) {
         T = new HashSet<>(size);
         try {
@@ -386,11 +415,11 @@ public class Kuznechik {
                 SecureRandom.getInstance("SHA1PRNG").nextBytes(randomBytes);
                 T.add(randomBytes);
             }
-        }
-        catch (NoSuchAlgorithmException e) {
+        } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         }
     }
+
     private byte[] encryptECB(byte[] input) {
         if (input.length % BLOCK_SIZE_BYTES != 0)
             throw new IllegalArgumentException("Data size isn't multiple of block size");
@@ -401,6 +430,7 @@ public class Kuznechik {
             outputBlocks[i] = encrypt(inputBlocks[i]);
         return concatData(outputBlocks);
     }
+
     private byte[] decryptECB(byte[] input) {
         if (input.length % BLOCK_SIZE_BYTES != 0)
             throw new IllegalArgumentException("Data size isn't multiple of block size");
@@ -411,6 +441,7 @@ public class Kuznechik {
             outputBlocks[i] = decrypt(inputBlocks[i]);
         return concatData(outputBlocks);
     }
+
     private byte[][] splitData(byte[] input) {
         int size = blocksCeiling(input);
         byte[][] output = new byte[size][16];
@@ -423,6 +454,7 @@ public class Kuznechik {
         }
         return output;
     }
+
     private byte[] concatData(byte[][] input) {
         byte[] output = new byte[input.length * BLOCK_SIZE_BYTES];
         for (int i = 0, j = 0, k = 0; k < output.length; k++, j++) {
@@ -434,12 +466,15 @@ public class Kuznechik {
         }
         return output;
     }
+
     private int blocksCeiling(byte[] input) {
         int result = input.length / BLOCK_SIZE_BYTES;
         if (input.length % BLOCK_SIZE_BYTES != 0)
             result++;
         return result;
     }
+
     public byte[][] getRoundKeys() {
         return roundKeys;
-    }}
+    }
+}
