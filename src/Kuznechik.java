@@ -216,8 +216,8 @@ public class Kuznechik {
     private void initRoundConst() {
         byte[][] roundNum = new byte[32][16];
         for (int i = 0; i < 32; i++) {
-            for (int j = 0; j < BLOCK_SIZE_BYTES; j++)
-                roundNum[i][j] = 0;
+//            for (int j = 0; j < BLOCK_SIZE_BYTES; j++)
+//                roundNum[i][j] = 0;
             roundNum[i][0] = (byte) (i + 1);
         }
         for (int i = 0; i < 32; i++)
@@ -253,7 +253,7 @@ public class Kuznechik {
         }
     }
 
-    private byte[] encrypt(byte[] inputBlock) {
+     byte[] encrypt(byte[] inputBlock) {
         byte[] outputBlock = inputBlock;
         for (int i = 0; i < 9; i++) {
             outputBlock = XOR(outputBlock, roundKeys[i]);
@@ -264,7 +264,7 @@ public class Kuznechik {
         return outputBlock;
     }
 
-    private byte[] decrypt(byte[] inputBlock) {
+     byte[] decrypt(byte[] inputBlock) {
         byte[] outputBlock = inputBlock;
         outputBlock = XOR(outputBlock, roundKeys[9]);
         for (int i = 8; i >= 0; i--) {
