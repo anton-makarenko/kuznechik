@@ -6,7 +6,7 @@ import java.util.Set;
 public class Kuznechik {
     private byte[] key;
     private byte[] iVector;
-    private byte[][] roundConst = new byte[32][16];
+    private byte[][] roundConsts = new byte[32][16];
     private byte[][] roundKeys = new byte[10][16];
     private int stopCBC;
     private int stopCFB;
@@ -213,7 +213,7 @@ public class Kuznechik {
         return output;
     }
 
-    private void initRoundConst() {
+    private void initRoundConsts() {
         byte[][] roundNum = new byte[32][16];
         for (int i = 0; i < 32; i++) {
 //            for (int j = 0; j < BLOCK_SIZE_BYTES; j++)
@@ -221,7 +221,7 @@ public class Kuznechik {
             roundNum[i][0] = (byte) (i + 1);
         }
         for (int i = 0; i < 32; i++)
-            roundConst[i] = L(roundNum[i]);
+            roundConsts[i] = L(roundNum[i]);
     }
 
     private byte[][] FeistelRound(byte[] inLeft, byte[] inRight, byte[] roundC) {
@@ -239,14 +239,14 @@ public class Kuznechik {
 
     private void initRoundKeys(byte[] left, byte[] right) {
         byte[][] curRound = new byte[2][];
-        initRoundConst();
+        initRoundConsts();
         roundKeys[0] = left;
         roundKeys[1] = right;
         curRound[0] = left;
         curRound[1] = right;
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 8; j++)
-                curRound = FeistelRound(curRound[0], curRound[1], roundConst[j + 8 *
+                curRound = FeistelRound(curRound[0], curRound[1], roundConsts[j + 8 *
                         i]);
             roundKeys[2 * i + 2] = curRound[0];
             roundKeys[2 * i + 3] = curRound[1];

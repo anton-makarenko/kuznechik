@@ -68,7 +68,7 @@ public class Main {
 //        writer.close();
         byte[] key = new byte[32];
         byte data[] = new byte[16];
-        Kuznechik kuznechik = Kuznechik.getInstance(key, new byte[16]);
+        Kuznechik kuznechik = Kuznechik.getInstance(key, data);
         byte[] encrypted = kuznechik.encrypt(data);
         System.out.println(Arrays.toString(encrypted));
         byte[] decrypted = kuznechik.decrypt(encrypted);
